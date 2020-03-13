@@ -10,6 +10,8 @@ from model_dispatcher import MODEL_DISPATCHER
 from dataset import BengaliDataset
 from argparse import ArgumentParser
 import torch.nn as nn
+from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -44,11 +46,15 @@ class CoolSystem(pl.LightningModule):
 
     def criterion(self, preds, targets):
         y1pred, y2pred, y3pred = preds
-        y1, y2, y3 = targets
+        y1, y2, y3 = targets        
         l1 = nn.CrossEntropyLoss()(y1pred, y1)
+        # print (l1)
         l2 = nn.CrossEntropyLoss()(y2pred, y2)
+        # print (l2)
         l3 = nn.CrossEntropyLoss()(y3pred, y3)
-        return (l1+l2+l3)/3.0
+        # print (l3)
+        avgl = (l1+l2+l3)/3.0        
+        return avgl
         
         
     
@@ -74,13 +80,13 @@ class CoolSystem(pl.LightningModule):
     def validation_end(self, outputs):
         # OPTIONAL
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        return {'avg_val_loss': avg_loss}
+        return {'val_loss': avg_loss}
 
     def configure_optimizers(self):
         # REQUIRED
         # can return multiple optimizers and learning_rate schedulers
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=5, factor=0.3, verbose=True)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=5, factor=0.3, verbose=True, )
         return [optimizer], [scheduler]
 
     @pl.data_loader
@@ -138,40 +144,31 @@ class CoolSystem(pl.LightningModule):
         parser.add_argument('--batch_size', default=32, type=int)
 
         # training specific (for this model)
-        parser.add_argument('--max_nb_epochs', default=2, type=int)
+        # parser.add_argument('--max_nb_epochs', default=2, type=int)
 
         return parser
     
-    
-from pytorch_lightning import Trainer
 
-# mymodel = CoolSystem()
-# trainer = Trainer()    
-# trainer.fit(mymodel)   
+early_stop_callback = EarlyStopping( monitor='val_loss', patience=5, verbose=True, mode='min')
+checkpoint_callback = ModelCheckpoint(filepath='./checkpoint_fold_%d/'%VALIDATIONS_FOLDS, save_top_k=1, verbose=True, monitor='val_loss', mode='min', prefix='')
 
 
 
 def main(hparams):
     mymodel = CoolSystem(hparams)
     print (hparams)
+    # exit()
     trainer = Trainer(
-        max_nb_epochs=hparams.max_nb_epochs,
-        gpus=-1,
-        nb_gpu_nodes=hparams.nodes,
+        max_nb_epochs=EPOCHS,
+        gpus=[1],
+        early_stop_callback=early_stop_callback, 
+        checkpoint_callback=checkpoint_callback
     )
     trainer.fit(mymodel)
 
 
 if __name__ == '__main__':
     parser = ArgumentParser(add_help=False)
-    parser.add_argument('--gpus', type=int, default=1)
-    parser.add_argument('--nodes', type=int, default=1)
-
-    # give the module a chance to add own params
-    # good practice to define LightningModule speficic params in the module
     parser = CoolSystem.add_model_specific_args(parser)
-
-    # parse params
     hparams = parser.parse_args()
-
     main(hparams)

@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import torch
 import pandas as pd 
 import joblib
