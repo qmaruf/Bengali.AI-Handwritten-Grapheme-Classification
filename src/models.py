@@ -26,8 +26,8 @@ class resnet50(nn.Module):
         super(resnet50, self).__init__()
         self.model = models.resnet50(pretrained=True)
         self.features = nn.Sequential(*list(self.model.children())[:-1])        
-        for p in self.features.parameters():
-            p.requires_grad=False
+        # for p in self.features.parameters():
+        #     p.requires_grad=False
         self.fc1 = nn.Linear(2048, 168)
         self.fc2 = nn.Linear(2048, 11)
         self.fc3 = nn.Linear(2048, 7)

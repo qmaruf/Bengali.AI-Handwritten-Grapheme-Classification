@@ -20,6 +20,7 @@ TRAINING_FOLDS_CSV=os.environ.get("TRAINING_FOLDS_CSV")
 IMG_HEIGHT=int(os.environ.get("IMG_HEIGHT"))
 IMG_WIDTH=int(os.environ.get("IMG_WIDTH"))
 EPOCHS=int(os.environ.get("EPOCHS"))
+LEARNING_RATE=float(os.environ.get("LEARNING_RATE"))
 
 TRAIN_BATCH_SIZE=int(os.environ.get("TRAIN_BATCH_SIZE"))
 VALID_BATCH_SIZE=int(os.environ.get("VALID_BATCH_SIZE"))
@@ -106,7 +107,7 @@ class CoolSystem(pl.LightningModule):
     def configure_optimizers(self):
         # REQUIRED
         # can return multiple optimizers and learning_rate schedulers
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
+        optimizer = torch.optim.Adam(self.parameters(), lr=LEARNING_RATE)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=5, factor=0.3, verbose=True, )
         return [optimizer], [scheduler]
 

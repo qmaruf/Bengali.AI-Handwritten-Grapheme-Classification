@@ -27,13 +27,15 @@ class BengaliDataset:
         else:
             self.aug = albumentations.Compose([
                 albumentations.Resize(img_height, img_width, always_apply=True),
-                # albumentations.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.1, rotate_limit=5),
+                albumentations.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.1, rotate_limit=5),
                 albumentations.HorizontalFlip(always_apply=True),
                 albumentations.Normalize(mean, std, always_apply=True)        
             ])
             
         
     def __len__(self):
+        # print (len(self.image_ids))
+        # exit()
         return len(self.image_ids)
     
     def __getitem__(self, item):
