@@ -32,7 +32,22 @@ TRAINING_FOLDS=ast.literal_eval(os.environ.get("TRAINING_FOLDS"))
 BASE_MODEL=os.environ.get("BASE_MODEL")
 
 
+class LabelSmoothingLoss(nn.Module):
+    def __init__(self, classes, smoothing=0.0, dim=-1):
+        super(LabelSmoothingLoss, self).__init__()
+        self.confidence = 1.0 - smoothing
+        self.smoothing = smoothing
+        self.cls = classes
+        self.dim = dim
 
+    def forward(self, pred, target):
+        pred = pred.log_softmax(dim=self.dim)
+        with torch.no_grad():
+            # true_dist = pred.data.clone()
+            true_dist = torch.zeros_like(pred)
+            true_dist.fill_(self.smoothing / (self.cls - 1))
+            true_dist.scatter_(1, target.data.unsqueeze(1), self.confidence)
+        return torch.mean(torch.sum(-true_dist * pred, dim=self.dim))
 
 class CoolSystem(pl.LightningModule):
     
@@ -40,6 +55,8 @@ class CoolSystem(pl.LightningModule):
         super(CoolSystem, self).__init__()
         self.hparams = hparams
         self.model = MODEL_DISPATCHER[BASE_MODEL]()
+        print (self.model)
+        # exit()
 
     def forward(self, x):
         return self.model(x)        
@@ -47,13 +64,17 @@ class CoolSystem(pl.LightningModule):
     def criterion(self, preds, targets):
         y1pred, y2pred, y3pred = preds
         y1, y2, y3 = targets        
-        l1 = nn.CrossEntropyLoss()(y1pred, y1)
-        # print (l1)
-        l2 = nn.CrossEntropyLoss()(y2pred, y2)
-        # print (l2)
-        l3 = nn.CrossEntropyLoss()(y3pred, y3)
+        # l1 = nn.CrossEntropyLoss()(y1pred, y1)
+        # l2 = nn.CrossEntropyLoss()(y2pred, y2)
+        # l3 = nn.CrossEntropyLoss()(y3pred, y3)
         # print (l3)
-        avgl = (l1+l2+l3)/3.0        
+
+        l1 = LabelSmoothingLoss(168)(y1pred, y1)
+        l2 = LabelSmoothingLoss(11)(y2pred, y2)
+        l3 = LabelSmoothingLoss(7)(y3pred, y3)
+        # print (l1.item(), l2.item(), l3.item())
+
+        avgl = (l1 * 0.5 + l2 * 0.25 + l3 * 0.25)/3.0        
         return avgl
         
         
@@ -160,7 +181,7 @@ def main(hparams):
     # exit()
     trainer = Trainer(
         max_nb_epochs=EPOCHS,
-        gpus=[1],
+        gpus=[0,1],
         early_stop_callback=early_stop_callback, 
         checkpoint_callback=checkpoint_callback
     )

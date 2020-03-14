@@ -27,7 +27,8 @@ class BengaliDataset:
         else:
             self.aug = albumentations.Compose([
                 albumentations.Resize(img_height, img_width, always_apply=True),
-                albumentations.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.1, rotate_limit=5),
+                # albumentations.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.1, rotate_limit=5),
+                albumentations.HorizontalFlip(always_apply=True),
                 albumentations.Normalize(mean, std, always_apply=True)        
             ])
             
@@ -37,7 +38,7 @@ class BengaliDataset:
     
     def __getitem__(self, item):
         image = joblib.load(f"../input/image_pickles/{self.image_ids[item]}.pkl")
-        image = image.reshape(137, 236).astype(float)
+        image = image.reshape(64, 64).astype(float)
         image = Image.fromarray(image).convert("RGB")
         image = self.aug(image=np.array(image))['image']
         image = np.transpose(image, (2, 0, 1)).astype(np.float32)
