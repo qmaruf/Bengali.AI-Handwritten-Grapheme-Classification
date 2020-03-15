@@ -46,6 +46,7 @@ class BengaliDataset:
         image = np.transpose(image, (2, 0, 1)).astype(np.float32)
         return {
             'image': torch.tensor(image,  dtype=torch.float),
+            'image_id': "../input/image_pickles/{self.image_ids[item]}.pkl",
             'grapheme_root': torch.tensor(self.grapheme_root[item], dtype=torch.long),
             'vowel_diacritic': torch.tensor(self.vowel_diacritic[item], dtype=torch.long),
             'consonant_diacritic': torch.tensor(self.consonant_diacritic[item], dtype=torch.long)

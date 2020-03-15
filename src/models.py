@@ -20,22 +20,25 @@ class resnet18(nn.Module):
         fc3 = self.fc3(x)
         return fc1, fc2, fc3
 
+feat_dict = dict()        
 
 class resnet50(nn.Module):
     def __init__(self):
         super(resnet50, self).__init__()
         self.model = models.resnet50(pretrained=True)
         self.features = nn.Sequential(*list(self.model.children())[:-1])        
-        # for p in self.features.parameters():
-        #     p.requires_grad=False
+        for p in self.features.parameters():
+            p.requires_grad=False
         self.fc1 = nn.Linear(2048, 168)
         self.fc2 = nn.Linear(2048, 11)
         self.fc3 = nn.Linear(2048, 7)
+        self.dropout = nn.Dropout(0.5)
         
     def forward(self, x):
         bs, _, _, _ = x.shape
         x = self.features(x)        
         x = x.view(bs, -1)        
+        x = self.dropout(x)
         fc1 = self.fc1(x)
         fc2 = self.fc2(x)
         fc3 = self.fc3(x)
@@ -56,6 +59,8 @@ class efficientnet(nn.Module):
     def forward(self, x):
         bs, _, _, _ = x.size()
         x = self.model.extract_features(x)
+        print (x)
+        exit()
         x = self._avg_pooling(x)
         x = x.view(bs, -1)       
         x = self._dropout(x)

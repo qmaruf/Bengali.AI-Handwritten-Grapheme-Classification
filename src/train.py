@@ -65,17 +65,17 @@ class CoolSystem(pl.LightningModule):
     def criterion(self, preds, targets):
         y1pred, y2pred, y3pred = preds
         y1, y2, y3 = targets        
-        # l1 = nn.CrossEntropyLoss()(y1pred, y1)
-        # l2 = nn.CrossEntropyLoss()(y2pred, y2)
-        # l3 = nn.CrossEntropyLoss()(y3pred, y3)
+        l1 = nn.CrossEntropyLoss()(y1pred, y1)
+        l2 = nn.CrossEntropyLoss()(y2pred, y2)
+        l3 = nn.CrossEntropyLoss()(y3pred, y3)
         # print (l3)
 
-        l1 = LabelSmoothingLoss(168)(y1pred, y1)
-        l2 = LabelSmoothingLoss(11)(y2pred, y2)
-        l3 = LabelSmoothingLoss(7)(y3pred, y3)
+        # l1 = LabelSmoothingLoss(168)(y1pred, y1)
+        # l2 = LabelSmoothingLoss(11)(y2pred, y2)
+        # l3 = LabelSmoothingLoss(7)(y3pred, y3)
         # print (l1.item(), l2.item(), l3.item())
 
-        avgl = (l1 * 0.5 + l2 * 0.25 + l3 * 0.25)/3.0        
+        avgl = (l1 * 0.4 + l2 * 0.3 + l3 * 0.3)/3.0        
         return avgl
         
         
@@ -108,7 +108,7 @@ class CoolSystem(pl.LightningModule):
         # REQUIRED
         # can return multiple optimizers and learning_rate schedulers
         optimizer = torch.optim.Adam(self.parameters(), lr=LEARNING_RATE)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=5, factor=0.3, verbose=True, )
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=2, factor=0.3, verbose=True, )
         return [optimizer], [scheduler]
 
     @pl.data_loader
